@@ -155,6 +155,10 @@ export function getGithubToken() {
 
 /** Gets the npm token to use. */
 export function getNpmToken() {
+  // https://github.com/npm/cli/blob/v11.11.0/lib/utils/oidc.js#L64-L70
+  const isOidc = process.env.GITHUB_ACTIONS === "true" && process.env.ACTIONS_ID_TOKEN_REQUEST_URL && process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN;
+  if (isOidc) return null;
+
   const token = process.env.NPM_TOKEN || "";
   if (!token) throw Error("missing NPM_TOKEN");
   return token;
@@ -256,6 +260,6 @@ export function publishRelease(nextVersion, commit, notes) {
 export function publishPackage(version) {
   const token = getNpmToken();
   run("npm", ["version", version, "--no-git-tag-version", "--allow-same-version"]);
-  run("npm", ["config", "set", `//registry.npmjs.org/:_authToken=${token}`]);
+  if (token) run("npm", ["config", "set", `//registry.npmjs.org/:_authToken=${token}`]);
   run("npm", ["publish", "--access", "public"]);
 }
